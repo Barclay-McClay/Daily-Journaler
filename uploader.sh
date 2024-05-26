@@ -1,7 +1,8 @@
 # This script is run once every-day on a server to commit changes to a git repository
 
+python auto_blog.py
+
 source .env
-	
 
 git config --global user.email $GITHUB_EMAIL
 git config --global user.name $GITHUB_NAME
