@@ -12,8 +12,10 @@ git remote set-url origin https://$GITHUB_TOKEN@github.com/$GITHUB_NAME/Daily-Jo
 # Add all files to the git repository
 git add .
 
+datestamp=$(date -I)
+
 # Commit the changes
-git commit -m "Daily update"
+git commit -m "Journal $datestamp"
 
 # Push the changes to the remote repository
 git push https://$GITHUB_NAME:$GITHUB_TOKEN@github.com/$GITHUB_NAME/Daily-Journaler.git/
