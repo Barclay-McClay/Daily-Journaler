@@ -1,7 +1,7 @@
 # Daily Journaler
 cd /home/bitnami/Daily-Journaler/
 
-python ./auto_blog.py
+python3 ./auto_blog.py
 
 source ./.env
 
