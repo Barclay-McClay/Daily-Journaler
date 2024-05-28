@@ -1,8 +1,9 @@
-# This script is run once every-day on a server to commit changes to a git repository
+# Daily Journaler
+cd /home/bitnami/Daily-Journaler/
 
-python auto_blog.py
+python ./auto_blog.py
 
-source .env
+source ./.env
 
 git config --global user.email $GITHUB_EMAIL
 git config --global user.name $GITHUB_NAME
