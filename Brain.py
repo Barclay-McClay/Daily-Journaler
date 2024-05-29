@@ -32,11 +32,14 @@ class Brain():
 #                                       ONLY ALTER CODE ENCLOSED BY THE HASHES
 # This is to ensure compatiblity when this is integrated into golem cyberdeck. We will be adding the functions in here to the golem's neural anatomy class.
 
-    def action_journal(self):
+    def start_flow_writeBlog(self):
         # Gather today's details
-        weather_pack = self.action_get_weather()
-        news_pack = self.action_get_news()
-        horoscope = self.action_get_horoscope()
+        self.daily_data = {
+            'weather': self.action_get_weather(),
+            'news': self.action_get_news(),
+            'horoscope': self.action_get_horoscope(),
+            'quote': self.action_get_quote()
+        }
         # backup settings
         max_token_backup = self.maxTokens
         conv_backup = self.conversation
@@ -45,11 +48,11 @@ class Brain():
         self.conversation = [
             {
                 "role": "system",
-                "content": self.allPrompts.create_journal_topic(weather_pack,news_pack,horoscope)
+                "content": self.allPrompts.create_journal_topic(self.daily_data)
             },
             {
                 "role": "user",
-                "content": "What should the topic of today's blog post be? Respond in no more than one sentence."
+                "content": self.allPrompts.userPrompt_blogTopic
             }
         ]
         topic = self.post()
@@ -59,7 +62,7 @@ class Brain():
         self.conversation = [
             {
                 "role": "system",
-                "content": self.allPrompts.create_journal_prompt(weather_pack,news_pack,horoscope)
+                "content": self.allPrompts.create_journal_prompt(self.daily_data)
             },
             {
                 "role": "user",
@@ -75,9 +78,8 @@ class Brain():
         # Restore settings
         self.maxTokens = max_token_backup
         self.conversation = conv_backup
+
         return file_path
-
-
 
     def action_get_news(self):
         base_url = "https://api.bing.microsoft.com/v7.0/news"
@@ -103,8 +105,17 @@ class Brain():
         response = requests.get(base_url)
         data = response.json()["data"]
         horoscope = data["horoscope_data"]
-        self.log_action(f"{sign} horoscope: {horoscope}")
+        self.log_action(f"Horoscope: {horoscope}")
         return horoscope
+    
+    def action_get_quote(self):
+        base_url = "https://zenquotes.io/api/random"
+        response = requests.get(base_url)
+        quote_data = response.json()
+        quote = f"{quote_data[0]['q']} - {quote_data[0]['a']}"
+        self.log_action(f"Quote: {quote}")
+        return quote
+
 
 ##################################################################################################################################
 ##################################################################################################################################
