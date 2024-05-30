@@ -115,6 +115,24 @@ class Brain():
         quote = f"{quote_data[0]['q']} - {quote_data[0]['a']}"
         self.log_action(f"Quote: {quote}")
         return quote
+    
+    def action_get_image_url(self, prompt=""):
+        if prompt != "":
+            image_url = self.openaiClient.images.generate(
+                prompt=prompt,
+                model="dall-e-3",
+                size="1024x1024",
+                quality="standard",
+                n=1,
+            )
+            return image_url
+        else:
+            return None
+        
+    def action_save_image(self, image_url, path):
+        with open(path, "wb") as f:
+            f.write(requests.get(image_url).content)
+        return path
 
 
 ##################################################################################################################################
@@ -182,3 +200,9 @@ class Brain():
         except Exception as err:
             print(err)
             return "I'm sorry, I've malfunctioned. Give me a moment, then try again."
+        
+
+
+
+test = Brain()
+print(test.action_get_image_url("Today's blog post will delve into the irony of self-help books that promise happiness and success while the world seems to be falling apart."))
