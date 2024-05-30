@@ -69,12 +69,21 @@ class Brain():
                 "content": topic
             }
         ]
-        response = self.post()
-        # Output to html
+        html_response = self.post()
+        # Generate some info to save the file
         day = datetime.now().strftime("%Y-%m-%d")
         file_path = f"./journals/journal_{day}.html"
+        # Generate and save an image to go with the post
+        # first get the heading of the post from the html
+        image_url = self.action_get_image_url(topic)
+        image_path = f"./blog-images/image_{day}.png"
+        self.action_save_image(image_url, image_path)
+        # Insert the image into the html, at the top of the body
+        html_response = html_response.replace("<body>", f"<body><img src='{image_path}' style='display: block; margin-left: auto; margin-right: auto; width: 50%;'>")
+        # Write out the html as a file
         with open(file_path, "w") as f:
-            f.write(response)
+            f.write(html_response)
+
         # Restore settings
         self.maxTokens = max_token_backup
         self.conversation = conv_backup
@@ -118,13 +127,15 @@ class Brain():
     
     def action_get_image_url(self, prompt=""):
         if prompt != "":
-            image_url = self.openaiClient.images.generate(
+            response = self.openaiClient.images.generate(
                 prompt=prompt,
                 model="dall-e-3",
                 size="1024x1024",
                 quality="standard",
                 n=1,
             )
+            image_url = response.data[0].url
+            self.log_action(f"Image generated: {image_url}")
             return image_url
         else:
             return None
@@ -132,6 +143,7 @@ class Brain():
     def action_save_image(self, image_url, path):
         with open(path, "wb") as f:
             f.write(requests.get(image_url).content)
+        self.log_action(f"Image saved: {path}")
         return path
 
 
@@ -200,9 +212,3 @@ class Brain():
         except Exception as err:
             print(err)
             return "I'm sorry, I've malfunctioned. Give me a moment, then try again."
-        
-
-
-
-test = Brain()
-print(test.action_get_image_url("Today's blog post will delve into the irony of self-help books that promise happiness and success while the world seems to be falling apart."))
