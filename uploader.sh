@@ -1,6 +1,8 @@
 # Daily Journaler
 cd ~/Daily-Journaler/
 
+source ./.env
+
 # Run the blogger script to generate the blog post
 python3 ./auto_blog.py
 
