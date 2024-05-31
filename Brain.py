@@ -159,7 +159,7 @@ class Brain():
         with open('./blog-data.json', 'r') as f:
             posts = json.load(f)
         # Append the new post to the list
-        posts.append({
+        posts['posts'].append({
             'title': blogpost_title,
             'date': blogpost_date,
             'url': f'blog-posts/journal_{blogpost_date}.html',
