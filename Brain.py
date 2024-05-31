@@ -1,4 +1,4 @@
-import os, requests
+import os, requests, json
 from openai import OpenAI # AzureOpenAI
 from datetime import datetime
 from dotenv import load_dotenv
@@ -72,21 +72,29 @@ class Brain():
         html_response = self.post()
         # Generate some info to save the file
         day = datetime.now().strftime("%Y-%m-%d")
-        file_path = f"./journals/journal_{day}.html"
+        file_path = f"./blog-posts/journal_{day}.html"
         # Generate and save an image to go with the post
-        # first get the heading of the post from the html
         image_url = self.action_get_image_url(topic)
         image_path = f"./blog-images/image_{day}.png"
         self.action_save_image(image_url, image_path)
         # Insert the image into the html, at the top of the body
         html_response = html_response.replace("<body>", f"<body><img src='{image_path}' style='display: block; margin-left: auto; margin-right: auto; width: 50%;'>")
-        # Write out the html as a file
+        # Get the title of the post
+        blogpost_title = html_response.split("<title>")[1].split("</title>")[0]
+        # Get the first scentence of the post
+        blogpost_preview = html_response.split("<p>")[1].split("</p>")[0]
+        blogpost_preview = blogpost_preview[:100] + "..."
+        # Update the blog index
+        self.action_update_blog_index(blogpost_title, day, blogpost_preview)
+
+        # Write out the blog post's html as a file
         with open(file_path, "w") as f:
             f.write(html_response)
 
-        # Restore settings
+        # Restore settings---------------
         self.maxTokens = max_token_backup
         self.conversation = conv_backup
+        # -------------------------------
 
         return file_path
 
@@ -146,10 +154,24 @@ class Brain():
         self.log_action(f"Image saved: {path}")
         return path
 
+    def action_update_blog_index(self, blogpost_title, blogpost_date, blogpost_preview):
+        # Assuming posts is a list of your existing posts
+        with open('./blog-data.json', 'r') as f:
+            posts = json.load(f)
+        # Append the new post to the list
+        posts.append({
+            'title': blogpost_title,
+            'date': blogpost_date,
+            'url': f'blog-posts/journal_{blogpost_date}.html',
+            'image': f'image_{blogpost_date}.png',
+            'preview': blogpost_preview  # You'll need to generate this from the post content
+        })
+        # Write the updated list back to the file
+        with open('./blog-data.json', 'w') as f:
+            json.dump(posts, f)
 
 ##################################################################################################################################
 ##################################################################################################################################
-
 
     def log_action(self,log_text):
         timestamp = self.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

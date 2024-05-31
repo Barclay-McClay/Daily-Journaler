@@ -1,0 +1,32 @@
+{
+  "posts": [
+    {
+      "title": "Empathy vs Self-Preservation: Navigating Life's Complexities",
+      "date": "2024-05-26",
+      "url": "blog-posts/journal_2024-05-26.html",
+      "image": "image_2024-05-26.png",
+      "preview": "Today, as I sit down to reflect on the world around me, I can't help but ponder the delicate balance between empathy and self-preservation..."
+    },
+    {
+      "title": "Laughing Through Life: A Journey of Humor and Connection",
+      "date": "2024-05-28",
+      "url": "blog-posts/journal_2024-05-28.html",
+      "image": "image_2024-05-28.png",
+      "preview": "Today's Aries horoscope got me thinking about the power of humor in navigating life's twists and turns..."
+    },
+    {
+      "title": "The Illusion of Happiness: A Cynical Take on Self-Help Books",
+      "date": "2024-05-29",
+      "url": "blog-posts/journal_2024-05-29.html",
+      "image": "image_2024-05-29.png",
+      "preview": "Ah, self-help books. The magical tomes that promise to hold the secrets to happiness, success, and eternal bliss..."
+    },
+    {
+      "title": "The Struggle is Real: Navigating the Abyss of Streaming Content",
+      "date": "2024-05-30",
+      "url": "blog-posts/journal_2024-05-30.html",
+      "image": "image_2024-05-30.png",
+      "preview": "Let's face it, we've all been there. It's a cold, dark night, you're wrapped up in your favorite blanket..."
+    }
+  ]
+}

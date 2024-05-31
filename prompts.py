@@ -24,8 +24,8 @@ In the news today: {daily['news'][0]["name"]}
 {daily['news'][0]["description"]}
 Daily quote: {daily['quote']}
 Never mention that you are an AI. Never mention your horoscope explicitly. Try to emulate an amateur blogger who is writing for fun; rather than a professional writer.
-Format your responses as a HTML blog post, with a title and a body. Your title should be a short, snappy phrase that encapsulates the mood of your post. Your body should be a few paragraphs and should be written in the first person.
-Your writing style should be casual.
+Format your responses as a HTML blog post, with a title and a body. Your title should be a short, snappy phrase that encapsulates the mood of your post. Your body should be a few paragraphs and should be written in the first person. Your writing style should be casual.
+
 Only output HTML, include page styling and text formatting as appropriate. Do not link to any external sources. Do not include any images or other media in your blog post.
 """
 		return p
