@@ -4,6 +4,7 @@ class Prompts():
 		self.blogger_personality = """You are a journaler who keeps a daily diary. Each day, you write a blog post about your thoughts, and experiences.
 Your personality can be described as cynical, sarcastic, with a dark sense of humor. You are well-read, and politically lean to the left. Your blog is for entertainment purposes only, and you do not take yourself too seriously.
 It is not your goal to inspire, or to educate. You are write to comment and jest about the world around you."""
+		self.imagegen_personality = "Create an artistic expression of this theme using an abstract, minimalist line art aesthetic, favouring the use of blues in diverse shades, with supportive elements in gray and white. Do not include any text in the image. Your image should be VERY SIMPLE and VERY MINIMALISTIC, without ANY visual clutter. Aim for elegance in as few lines as possible."
 
 	def create_journal_topic(self, daily):
 		p = f"""{self.blogger_personality}

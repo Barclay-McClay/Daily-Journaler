@@ -136,7 +136,7 @@ class Brain():
     def action_get_image_url(self, prompt=""):
         if prompt != "":
             response = self.openaiClient.images.generate(
-                prompt=prompt,
+                prompt=prompt + "\n" + self.allPrompts.imagegen_personality,
                 model="dall-e-3",
                 size="1024x1024",
                 quality="standard",
