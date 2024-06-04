@@ -176,9 +176,10 @@ class Brain():
                     </div>
                 </div>
                 <div class="post-navigation">
-                    <a href="../{prev_post_url}" class="nav-prev">Previous Post</a>
+                    <a href="./{prev_post_url}" class="nav-prev">Previous Post</a>
                     <a href="../index.html" class="bottom-backlink">Back to Home</a>
-                    <a href="../{next_post_url}" class="nav-next">Next Post</a>
+                    <a href="./index.html" class="bottom-backlink">Blog Index</a>
+                    <a href="./{next_post_url}" class="nav-next">Next Post</a>
                 </div>
             </div>
         </body>
