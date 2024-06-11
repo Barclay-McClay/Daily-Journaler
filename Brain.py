@@ -9,8 +9,6 @@ from prompts import Prompts
 class Brain():
     def __init__(self):
         print(f"---+---+---+---+---+---+---+---\nCreating new neural anatomy instance\n---+---+---+---+---+---+---+---")
-        self.in_flow = True # Switches to False at end of init
-        self.flow_interrupt = False
         # Openai
         self.openaiClient=OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.deployment_name=os.getenv("AZURE_OPENAI_MODEL")
@@ -45,9 +43,9 @@ class Brain():
             'tarot': self.action_get_tarot(3),
             'topic': '', # We'll generate a topic
             'searchTerms': '', # Quotidian will provide us with search terms
-            'news': '' # We'll search for the news using provided search terms
+            'news': '', # We'll search for the news using provided search terms
+            'postHistory': self.action_get_lastFivePosts()
         }
-        # Generate some metadata to save the file
         # Start Pipeline Enrichment process-----------------------------------
         # [0] RESET - Topicgen personality to system prompt
         self.action_conversation_reset(self.allPrompts.topicgen_personality)
@@ -67,17 +65,19 @@ class Brain():
         self.add_prompt(self.allPrompts.create_userPrompt_blogTopicContext(self.daily_data))
         topic_context = self.post()
         self.log_action(f"More context: {topic_context}")
+        self.add_prompt(self.allPrompts.userPrompt_logger)
+        logger_summary = self.post()
         # [4] RESET - Tarot personality to system prompt
         self.action_conversation_reset(self.allPrompts.tarot_personality)
         # [5] First Prompt: Given the tarot cards, how should we structure the blog post?
         self.add_prompt(self.allPrompts.create_tarot_prompt(self.daily_data))
-        suggested_structure = self.post()
+        suggested_structure_raw = self.post()
         # I REALLY don't want the bot to talk about the tarot, so I'm going to make extra sure it doesn't leak into the prompts
-        suggested_structure = suggested_structure.replace("tarot", "")
-        suggested_structure = suggested_structure.replace("Tarot", "")
-        suggested_structure = suggested_structure.replace(self.daily_data['tarot'][0], "")
-        suggested_structure = suggested_structure.replace(self.daily_data['tarot'][1], "")
-        suggested_structure = suggested_structure.replace(self.daily_data['tarot'][2], "")
+        suggested_structure = suggested_structure_raw.replace("tarot", "")
+        suggested_structure = suggested_structure_raw.replace("Tarot", "")
+        suggested_structure = suggested_structure_raw.replace(self.daily_data['tarot'][0], "")
+        suggested_structure = suggested_structure_raw.replace(self.daily_data['tarot'][1], "")
+        suggested_structure = suggested_structure_raw.replace(self.daily_data['tarot'][2], "")
         self.log_action(f"Tarot-based structure: {self.daily_data['tarot']}, {suggested_structure}")
         # [6] RESET - Quotidian personality to system prompt
         self.action_conversation_reset(self.allPrompts.quotidian_personality)
@@ -94,6 +94,11 @@ class Brain():
         self.add_response(titlecontent_response)
         # Dev Mode will save the response as a markdown file and end the function here -----
         if dev_mode:
+            print(titlecontent_response)
+            print(bodycontent_repsonse)
+            print(f"-----")
+            print(logger_summary)
+            print(f"-----")
             file_path = f"./blog-posts/journal_{day}_dev.md"
             # Write out the blog post's html as a file
             with open(file_path, "w") as f:
@@ -110,8 +115,20 @@ class Brain():
         # Update the blog index
         self.action_update_blog_index(titlecontent_response, day, blogpost_preview)
 
+        # Let's get the adverserial critic to give us some feedback on the post
+        # [0] RESET - Adversarial Critic personality to system prompt
+        self.action_conversation_reset(self.allPrompts.adversarialCritic_personality)
+        # [1] First Prompt: Look at the topics
+        self.add_prompt(self.allPrompts.create_userPrompt_critiqueTopic(self.daily_data))
+        post_feedback = [self.post()]
+        self.add_response(post_feedback[0])
+        # [2] Second Prompt: Given the blog post, what feedback do you have for the author?
+        self.add_prompt(f"Please provide your feedback on the blog post:\n{titlecontent_response}\n{bodycontent_repsonse}")
+        post_feedback.append(self.post())
+        self.add_response(post_feedback[1])
+        self.log_action(f"Adversarial critic feedback: {post_feedback}")
         # Format the blog post as HTML
-        html_response = self.action_generate_html(titlecontent_response, bodycontent_repsonse, image_path)
+        html_response = self.action_generate_html(titlecontent_response, bodycontent_repsonse, image_path, logger_summary, self.daily_data, topic_context, suggested_structure_raw, post_feedback)
         # Generate and save an image to go with the post
         image_url = self.action_get_image_url(topic)
         self.action_save_image(image_url, image_path)
@@ -137,7 +154,7 @@ class Brain():
             html_paragraphs.append(p)
         return "\n".join(html_paragraphs)
     
-    def action_generate_html(self, title, content, image_path):
+    def action_generate_html(self, title, content, image_path, logger_summary, daily_data, topic_context, suggested_structure, post_feedback):
         day=self.daily_data['day']
         tomorrow=(datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
         yesterday=(datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -175,6 +192,34 @@ class Brain():
                         {content}
                     </div>
                 </div>
+                <div class="post-details">
+                    <details>
+                        <summary>Take a peek behind the curtains...</summary>
+                        <p id="creation-details">{logger_summary}</p>
+                        <p><b>Today's horoscope:</b> {daily_data['horoscope']}</p>
+                        <p><b>Today's quote:</b> <q>{daily_data['quote']}</q></p>
+                        <p>Quotidian searched for news on {daily_data['searchTerms']}, and today's headlines were:</p>
+                        <ul>
+                            <li>{daily_data['news'][0]['name']}</li>
+                            <li>{daily_data['news'][1]['name']}</li>
+                            <li>{daily_data['news'][2]['name']}</li>
+                        </ul>
+                        <p><b>Quotidian used this data to arrive at the topic of:</b></p>
+                        <p id="creation-details">{daily_data['topic']}</p>
+                        <p id="creation-details">{topic_context}</p>
+                        <p><b>Today's tarot cards:</b></p>
+                        <ul>
+                            <li>{daily_data['tarot'][0]}</li>
+                            <li>{daily_data['tarot'][1]}</li>
+                            <li>{daily_data['tarot'][2]}</li>
+                        </ul>
+                        <p>Quotidian used the tarot cards to structure the blog post as follows:</p>
+                        <p  id="creation-details">{suggested_structure}</p>
+                        <p><b>Feedback from the adversarial critic:</b></p>
+                        <p id="creation-details">{post_feedback[0]}</p>
+                        <p id="creation-details">{post_feedback[1]}</p>
+                    </details>
+                </div>
                 <div class="post-navigation">
                     <a href="./{prev_post_url}" class="nav-prev">Previous Post</a>
                     <a href="../index.html" class="bottom-backlink">Back to Home</a>
@@ -202,11 +247,13 @@ class Brain():
         return random.sample(tarot_deck, count)
 
     def action_get_news(self,searchTerms=""):
+        count = 3
+        pack = []
         self.log_action(f"Searching news: {searchTerms}")
         base_url = "https://api.bing.microsoft.com/v7.0/news"
         params = {
             "cc": "au",
-            "count": 3,
+            "count": count,
             "freshness": "Day",
             "q": searchTerms,
             "mkt": "en-AU",
@@ -214,7 +261,10 @@ class Brain():
         headers = { 'Ocp-Apim-Subscription-Key': os.getenv("AZURE_NEWS_KEY") }
         response = requests.get(base_url, headers=headers, params=params)
         news_data = response.json()
-        pack = []
+        if response.status_code != 200:
+            self.log_action(f"Error: {news_data['error']['message']}")
+            for n in range(count):
+                pack.append({"name": "Error", "description": 'There was an error fetching the news.'})
         for n in news_data["value"]:
             pack.append({"name": n["name"], "description": n["description"]})
             self.log_action(f"News headline: {n['name']}")
@@ -223,6 +273,9 @@ class Brain():
     def action_get_horoscope(self, sign="aries"):
         base_url = f"https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily?day=TODAY&sign={sign}"
         response = requests.get(base_url)
+        if response.status_code != 200:
+            self.log_action(f"Error Horoscope: {response.json()['error']}")
+            return "Error"
         data = response.json()["data"]
         horoscope = data["horoscope_data"]
         self.log_action(f"Horoscope: {horoscope}")
@@ -232,6 +285,9 @@ class Brain():
         base_url = "https://zenquotes.io/api/random"
         response = requests.get(base_url)
         quote_data = response.json()
+        if response.status_code != 200:
+            self.log_action(f"Error Quote: {quote_data['error']}")
+            return "Error"
         quote = f"{quote_data[0]['q']} - {quote_data[0]['a']}"
         self.log_action(f"Quote: {quote}")
         return quote
@@ -256,6 +312,11 @@ class Brain():
             f.write(requests.get(image_url).content)
         self.log_action(f"Image saved: {path}")
         return path
+
+    def action_get_lastFivePosts(self):
+        with open('./blog-data.json', 'r') as f:
+            posts = json.load(f)
+        return posts['posts'][-5:]
 
     def action_update_blog_index(self, blogpost_title, blogpost_date, blogpost_preview):
         # Assuming posts is a list of your existing posts
@@ -292,6 +353,9 @@ class Brain():
             "units": "metric"
         }
         response = requests.get(base_url, params=params)
+        if response.status_code != 200:
+            self.log_action(f"Error: {response.json()}")
+            return ["Error", "Error"]
         weather_data = response.json()
         data = [weather_data["weather"][0]["description"], str(weather_data["main"]["temp"]) + "°C"]
         self.log_action(f"Weather: {data[0]}, {data[1]}")
@@ -337,3 +401,8 @@ class Brain():
         except Exception as err:
             print(err)
             return "I'm sorry, I've malfunctioned. Give me a moment, then try again."
+        
+
+
+b = Brain()
+b.start_flow_writeBlog()
