@@ -401,8 +401,3 @@ class Brain():
         except Exception as err:
             print(err)
             return "I'm sorry, I've malfunctioned. Give me a moment, then try again."
-        
-
-
-b = Brain()
-b.start_flow_writeBlog()
