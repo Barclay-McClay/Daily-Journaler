@@ -67,6 +67,7 @@ class Brain():
         self.log_action(f"More context: {topic_context}")
         self.add_prompt(self.allPrompts.userPrompt_logger)
         logger_summary = self.post()
+        self.log_action(f"Logger summary: {logger_summary}")
         # [4] RESET - Tarot personality to system prompt
         self.action_conversation_reset(self.allPrompts.tarot_personality)
         # [5] First Prompt: Given the tarot cards, how should we structure the blog post?
@@ -92,6 +93,19 @@ class Brain():
         titlecontent_response = ''.join(e for e in titlecontent_response if e.isalnum() or e.isspace() or e == "-" or e == ":")
         titlecontent_response = titlecontent_response.strip()
         self.add_response(titlecontent_response)
+        # Let's get the adverserial critic to give us some feedback on the post
+        # [9] RESET - Adversarial Critic personality to system prompt
+        self.action_conversation_reset(self.allPrompts.adversarialCritic_personality)
+        # [10] First Prompt: Look at the topics
+        self.add_prompt(self.allPrompts.create_userPrompt_critiqueTopic(self.daily_data))
+        post_feedback = [self.post()]
+        self.add_response(post_feedback[0])
+        # [11] Second Prompt: Given the blog post, what feedback do you have for the author?
+        self.add_prompt(f"Please provide your feedback on the blog post:\n{titlecontent_response}\n{bodycontent_repsonse}")
+        post_feedback.append(self.post())
+        self.add_response(post_feedback[1])
+        self.log_action(f"Adversarial critic feedback: {post_feedback}")
+        # -----------------------------------------------------------
         # Dev Mode will save the response as a markdown file and end the function here -----
         if dev_mode:
             print(titlecontent_response)
@@ -99,10 +113,11 @@ class Brain():
             print(f"-----")
             print(logger_summary)
             print(f"-----")
+            print(post_feedback)
             file_path = f"./blog-posts/journal_{day}_dev.md"
             # Write out the blog post's html as a file
             with open(file_path, "w") as f:
-                f.write(f"# {titlecontent_response}\n\n{bodycontent_repsonse}")
+                f.write(f"# {titlecontent_response}\n\n{bodycontent_repsonse}\n\n## Behind the scenes\n{logger_summary}\n\n## Adversarial critic feedback\n{post_feedback[0]}\n{post_feedback[1]}")
             self.log_action(f"----- COMPLETING DEV MODE FLOW ------")
             return file_path
         # -----------------------------------------------------------
@@ -115,18 +130,7 @@ class Brain():
         # Update the blog index
         self.action_update_blog_index(titlecontent_response, day, blogpost_preview)
 
-        # Let's get the adverserial critic to give us some feedback on the post
-        # [0] RESET - Adversarial Critic personality to system prompt
-        self.action_conversation_reset(self.allPrompts.adversarialCritic_personality)
-        # [1] First Prompt: Look at the topics
-        self.add_prompt(self.allPrompts.create_userPrompt_critiqueTopic(self.daily_data))
-        post_feedback = [self.post()]
-        self.add_response(post_feedback[0])
-        # [2] Second Prompt: Given the blog post, what feedback do you have for the author?
-        self.add_prompt(f"Please provide your feedback on the blog post:\n{titlecontent_response}\n{bodycontent_repsonse}")
-        post_feedback.append(self.post())
-        self.add_response(post_feedback[1])
-        self.log_action(f"Adversarial critic feedback: {post_feedback}")
+
         # Format the blog post as HTML
         html_response = self.action_generate_html(titlecontent_response, bodycontent_repsonse, image_path, logger_summary, self.daily_data, topic_context, suggested_structure_raw, post_feedback)
         # Generate and save an image to go with the post
