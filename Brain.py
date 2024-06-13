@@ -357,13 +357,17 @@ class Brain():
             "units": "metric"
         }
         response = requests.get(base_url, params=params)
-        if response.status_code != 200:
-            self.log_action(f"Error: {response.json()}")
+        try:
+            if response.status_code != 200:
+                self.log_action(f"Error: {response.json()}")
+                return ["Error", "Error"]
+            weather_data = response.json()
+            data = [weather_data["weather"][0]["description"], str(weather_data["main"]["temp"]) + "°C"]
+            self.log_action(f"Weather: {data[0]}, {data[1]}")
+            return data
+        except Exception as e:
+            self.log_action(f"Error getting weather: {e}")
             return ["Error", "Error"]
-        weather_data = response.json()
-        data = [weather_data["weather"][0]["description"], str(weather_data["main"]["temp"]) + "°C"]
-        self.log_action(f"Weather: {data[0]}, {data[1]}")
-        return data
 
     def action_conversation_reset(self,sysprompt=""):
         if sysprompt == "":
