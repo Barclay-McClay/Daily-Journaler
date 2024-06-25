@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from prompts import Prompts
+from blogformatter import BlogFormatter
 
 class Brain():
     def __init__(self):
@@ -25,6 +26,41 @@ class Brain():
         # Temporal
         self.datetime = datetime
         #----------------------------------------------
+        self.formatter = BlogFormatter()
+
+    def start_flow_manualBlog(self, post_title, content_filepath):
+        # This flow is for manually creating "Developer's notes" style blog post. Not written by AI.
+        day = datetime.now().strftime("%Y-%m-%d")
+        self.log_action(f"Mannual blog post: {post_title}")
+        # Get the text from the file
+        with open(content_filepath, "r") as f:
+            bodycontent_repsonse = f.read()
+        # Quotidian's read
+        self.action_conversation_reset(self.allPrompts.quotidian_personality)
+        self.add_prompt(self.allPrompts.userPrompt_readManualBlog + f"\n\n{bodycontent_repsonse}")
+        logger_summary = self.post()
+        # Get some feedback on the post from the adversarial critic
+        self.action_conversation_reset(self.allPrompts.adversarialCritic_personality)
+        self.add_prompt(f"Please provide your feedback on the blog post:\n{post_title}\n{bodycontent_repsonse}")
+        post_feedback = self.post()
+        self.log_action(f"Adversarial critic feedback: {post_feedback}")
+        # -----------------------------------------------------------
+        # Format it as HTML
+        file_path = f"./blog-posts/devBlog_{day}.html"
+        image_path = f"./blog-images/image_devBlog_{day}.png"
+        # Get the first scentence of the post
+        blogpost_preview = bodycontent_repsonse[:100] + "..."
+        # Format the blog post as HTML
+        html_response = self.formatter.action_generate_manualBlog(post_title, bodycontent_repsonse, image_path, logger_summary, post_feedback)
+        # Generate and save an image to go with the post
+        image_url = self.action_get_image_url(post_title, self.allPrompts.imagegen_manualPost_personality)
+        self.action_save_image(image_url, image_path)
+        # Update the blog index
+        self.action_update_blog_index(post_title, day, blogpost_preview, "devBlog")
+        # Write out the blog post's html as a file
+        with open(file_path, "w") as f:
+            f.write(html_response)
+        return file_path
 
     #----------------------------------------------------------------------------------------------------------------------------------
     # This is the main 'pipeline' that causes the bot to create and save the blog post
@@ -124,15 +160,14 @@ class Brain():
         # [X] End Pipeline Enrichment process-----------------------------------
         # Now we have the blog post, we can save it as a file
         file_path = f"./blog-posts/journal_{day}.html"
-        image_path = f"./blog-images/image_{day}.png"
+        image_path = f"./blog-images/image_journal_{day}.png"
         # Get the first scentence of the post
         blogpost_preview = bodycontent_repsonse[:100] + "..."
         # Update the blog index
-        self.action_update_blog_index(titlecontent_response, day, blogpost_preview)
-
+        self.action_update_blog_index(titlecontent_response, day, blogpost_preview, "dailyBlog")
 
         # Format the blog post as HTML
-        html_response = self.action_generate_html(titlecontent_response, bodycontent_repsonse, image_path, logger_summary, self.daily_data, topic_context, suggested_structure_raw, post_feedback)
+        html_response = self.formatter.action_generate_html(titlecontent_response, bodycontent_repsonse, image_path, logger_summary, self.daily_data, topic_context, suggested_structure_raw, post_feedback)
         # Generate and save an image to go with the post
         image_url = self.action_get_image_url(topic)
         self.action_save_image(image_url, image_path)
@@ -145,96 +180,6 @@ class Brain():
         # End of main 'pipeline' The blog post has been generated, saved, and the blog index updated
         # ----------------------------------------------------------------------------------------------------------------------------------
 
-    def action_format_htmlbody(self,content):
-        # Split content into paragraphs at every newline
-        html_paragraphs = []
-        paragraphs = content.split("\n")
-        # Wrap each paragraph in <p> tags
-        for p in paragraphs:
-            if p.strip():
-                p = f"<p>{p}</p>"
-            else:
-                p = "<br>"
-            html_paragraphs.append(p)
-        return "\n".join(html_paragraphs)
-    
-    def action_generate_html(self, title, content, image_path, logger_summary, daily_data, topic_context, suggested_structure, post_feedback):
-        day=self.daily_data['day']
-        tomorrow=(datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-        yesterday=(datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-        # Initialize previous and next URLs
-        prev_post_url = f"journal_{yesterday}.html"
-        next_post_url = f"journal_{tomorrow}.html"
-        # Next and previous links
-        content = self.action_format_htmlbody(content)
-         # Construct relative paths based on the date
-        html = f"""
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <head>
-            <link rel="preconnect" href="https://fonts.googleapis.com">
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-            <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Quotidian's Journal | {title}</title>
-            <link rel="stylesheet" href="./blog-style.css">
-        </head>
-        <body>
-            <div class="container">
-                <header>
-                    <a href="../index.html" class="header-backlink">Back to Home</a>
-                    <h2 class="post-title">{title}</h2>
-                    <p class="post-date">{day}</p>
-                </header>
-                <div class="grid-container">
-                    <div class="grid-item">
-                        <img src="{image_path}" class="blog-img" />
-                    </div>
-                    <div class="blog-bodycontent">
-                        {content}
-                    </div>
-                </div>
-                <div class="post-details">
-                    <details>
-                        <summary>Take a peek behind the curtains...</summary>
-                        <p id="creation-details">{logger_summary}</p>
-                        <p><b>Today's horoscope:</b> {daily_data['horoscope']}</p>
-                        <p><b>Today's quote:</b> <q>{daily_data['quote']}</q></p>
-                        <p>Quotidian searched for news on {daily_data['searchTerms']}, and today's headlines were:</p>
-                        <ul>
-                            <li>{daily_data['news'][0]['name']}</li>
-                            <li>{daily_data['news'][1]['name']}</li>
-                            <li>{daily_data['news'][2]['name']}</li>
-                        </ul>
-                        <p><b>Quotidian used this data to arrive at the topic of:</b></p>
-                        <p id="creation-details">{daily_data['topic']}</p>
-                        <p id="creation-details">{topic_context}</p>
-                        <p><b>Today's tarot cards:</b></p>
-                        <ul>
-                            <li>{daily_data['tarot'][0]}</li>
-                            <li>{daily_data['tarot'][1]}</li>
-                            <li>{daily_data['tarot'][2]}</li>
-                        </ul>
-                        <p>Quotidian used the tarot cards to structure the blog post as follows:</p>
-                        <p  id="creation-details">{suggested_structure}</p>
-                        <p><b>Feedback from the adversarial critic:</b></p>
-                        <p id="creation-details">{post_feedback[0]}</p>
-                        <p id="creation-details">{post_feedback[1]}</p>
-                    </details>
-                </div>
-                <div class="post-navigation">
-                    <a href="./{prev_post_url}" class="nav-prev">Previous Post</a>
-                    <a href="../index.html" class="bottom-backlink">Back to Home</a>
-                    <a href="./index.html" class="bottom-backlink">Blog Index</a>
-                    <a href="./{next_post_url}" class="nav-next">Next Post</a>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        return html
 
     def action_get_tarot(self,count=1):
         major_arcana = ["The Fool", "The Magician", "The High Priestess", "The Empress", "The Emperor", "The Hierophant", "The Lovers", "The Chariot", 
@@ -296,10 +241,12 @@ class Brain():
         self.log_action(f"Quote: {quote}")
         return quote
     
-    def action_get_image_url(self, prompt=""):
+    def action_get_image_url(self, prompt="", personality = ""):
         if prompt != "":
+            if personality == "":
+                personality = self.allPrompts.imagegen_personality # Default if none selected
             response = self.openaiClient.images.generate(
-                prompt=prompt + "\n" + self.allPrompts.imagegen_personality,
+                prompt=prompt + "\n" + personality,
                 model="dall-e-3",
                 size="1024x1024",
                 quality="standard",
@@ -322,7 +269,7 @@ class Brain():
             posts = json.load(f)
         return posts['posts'][-5:]
 
-    def action_update_blog_index(self, blogpost_title, blogpost_date, blogpost_preview):
+    def action_update_blog_index(self, blogpost_title, blogpost_date, blogpost_preview, blogpost_type="journal"):
         # Assuming posts is a list of your existing posts
         with open('./blog-data.json', 'r') as f:
             posts = json.load(f)
@@ -330,9 +277,10 @@ class Brain():
         posts['posts'].append({
             'title': blogpost_title,
             'date': blogpost_date,
-            'url': f'blog-posts/journal_{blogpost_date}.html',
-            'image': f'image_{blogpost_date}.png',
-            'preview': blogpost_preview  # You'll need to generate this from the post content
+            'url': f'blog-posts/{blogpost_type}_{blogpost_date}.html',
+            'image': f'image_{blogpost_type}_{blogpost_date}.png',
+            'preview': blogpost_preview,  # You'll need to generate this from the post content
+            'postType': blogpost_type
         })
         # Write the updated list back to the file
         with open('./blog-data.json', 'w') as f:

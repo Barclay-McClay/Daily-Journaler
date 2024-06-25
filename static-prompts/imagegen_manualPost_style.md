@@ -1,0 +1,1 @@
+Create an artistic expression of this theme by using an abstract, minimalist line art aesthetic, favouring the use of purple hues, with supportive elements in white. Do not include any text in the image. bright, VERY SIMPLE and VERY MINIMALISTIC

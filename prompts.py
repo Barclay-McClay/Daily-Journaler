@@ -4,6 +4,8 @@ class Prompts():
 
 		self.userPrompt_logger = "Thank you. That role is over. Now for documentation purposes, please provide a very brief summary of ALL the information you have been provided thus far, and how it influenced your reponses."
 
+		self.userPrompt_readManualBlog = "This is a post from your developer, discussing you. Please read it and provide a response from your point of view as Quotidian, the AI:"
+
 		with open("static-prompts/tarot_personality.md", "r") as f:
 			self.tarot_personality = f.read()
 
@@ -15,6 +17,9 @@ class Prompts():
 
 		with open("static-prompts/imagegen_style.md", "r") as f:
 			self.imagegen_personality = f.read()
+
+		with open("static-prompts/imagegen_manualPost_style.md", "r") as f:
+			self.imagegen_manualPost_personality = f.read()
 
 		with open("static-prompts/adversarialCritic_personality.md", "r") as f:
 			self.adversarialCritic_personality = f.read()
