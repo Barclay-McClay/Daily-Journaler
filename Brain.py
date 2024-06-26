@@ -164,7 +164,7 @@ class Brain():
         # Get the first scentence of the post
         blogpost_preview = bodycontent_repsonse[:100] + "..."
         # Update the blog index
-        self.action_update_blog_index(titlecontent_response, day, blogpost_preview, "dailyBlog")
+        self.action_update_blog_index(titlecontent_response, day, blogpost_preview, "journal")
 
         # Format the blog post as HTML
         html_response = self.formatter.action_generate_html(titlecontent_response, bodycontent_repsonse, image_path, logger_summary, self.daily_data, topic_context, suggested_structure_raw, post_feedback)

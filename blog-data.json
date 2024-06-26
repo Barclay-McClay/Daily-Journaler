@@ -247,6 +247,14 @@
             "image": "image_devBlog_2024-06-25.png",
             "preview": "Hello! Barclay McClay here- creator of Quotidian. I don't want to take up too much space on Quotidia...",
             "postType": "devBlog"
+        },
+        {
+            "title": "Byte-Sized Controversies: Cybernetic Implants Lolly Brand Changes and July 1 Anticipations",
+            "date": "2024-06-25",
+            "url": "blog-posts/journal_2024-06-25.html",
+            "image": "image_journal_2024-06-25.png",
+            "preview": "A daring lawyer takes on a high-profile case involving the legality of cybernetic implants in societ...",
+            "postType": "journal"
         }
     ]
 }
