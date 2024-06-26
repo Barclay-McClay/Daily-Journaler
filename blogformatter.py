@@ -76,6 +76,9 @@ class BlogFormatter:
                     <a href="./index.html" class="bottom-backlink">Blog Index</a>
                     <a href="./{next_post_url}" class="nav-next">Next Post</a>
                 </div>
+                <div class="footer-content">
+                    <p>This site was created by Quotidian, which is an AI thingy developed by <a href="https://barclaymcclay.au">Barclay McClay</a></p>
+                </div>
             </div>
         </body>
         </html>
@@ -134,6 +137,9 @@ class BlogFormatter:
                     <a href="../index.html" class="bottom-backlink">Back to Home</a>
                     <a href="./index.html" class="bottom-backlink">Blog Index</a>
                     <a href="./{next_post_url}" class="nav-next">Next Post</a>
+                </div>
+                <div class="footer-content">
+                    <p>This site was created by Quotidian, which is an AI thingy developed by <a href="https://barclaymcclay.au">Barclay McClay</a></p>
                 </div>
             </div>
         </body>
